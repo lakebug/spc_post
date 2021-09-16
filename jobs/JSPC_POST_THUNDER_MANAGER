@@ -1,0 +1,78 @@
+#!/bin/sh
+date
+export PS4=' $SECONDS + '
+set -x
+
+########################################
+# SET THE WORKING DIRECTORY
+########################################
+export DATA=${DATA:-${DATAROOT:?}/$jobid}
+#export DATA=${DATA:-${DATAROOT:?}/$job}
+mkdir -p $DATA
+cd $DATA
+
+####################################
+# Specify NET Name and RUN
+####################################
+export NET=${NET:-spc_post}
+export RUN=${RUN:-spc_post}
+export pgmout="$$"
+
+####################################
+# SENDECF  - Flag Events on ECFLOW
+# SENDCOM  - Copy Files From TMPDIR to $COMOUT
+# SENDDBN  - Issue DBNet Client Calls
+####################################
+export SENDCOM=${SENDCOM:-YES}
+export SENDECF=${SENDECF:-YES}
+export SENDDBN=${SENDDBN:-YES}
+
+########################################
+# SET THE EXECUTION VARIABLES
+########################################
+export FIXspc_post=${FIXspc_post:-${HOMEspc_post}/fix}
+export USHspc_post=${USHspc_post:-${HOMEspc_post}/ush} 
+
+########################################
+# SET THE DATE VARIABLES
+########################################
+export cycle=t${cyc}z
+setpdy.sh
+. ./PDY
+
+########################################
+# SET THE INPUT DIRECTORIES
+########################################
+export COMOUT=${COMOUT:-$(compath.py -o $envir/com/$NET/${spc_post_ver})}
+export COMOUTspc_post=${COMOUTspc_nam:-${COMOUT}}
+export COMOUTspc_nam=${COMOUTspc_nam:-${COMOUT}/spc_nam}   # spc post processed nam
+
+export COMINhiresw=${COMINhiresw:-$(compath.py $envir/com/hiresw/${hiresw_ver})}
+export COMINhrrr=${COMINhrrr:-$(compath.py $envir/com/hrrr/${hrrr_ver})}
+export COMINnam=${COMINnam:-$(compath.py $envir/com/nam/${nam_ver})}
+export COMINspcsref=${COMINspcsref:-$(compath.py $envir/com/spcsref/${spcsref_ver})}
+
+export COMINhrw_string="fv3"
+
+##############################################
+# Execute the script
+${HOMEspc_post}/scripts/exhref_cal_thunder_manager.sh
+export err=$?; err_chk
+##############################################
+
+msg="JOB $job HAS COMPLETED NORMALLY."
+postmsg $jlogfile "$msg"
+
+if [ -e $pgmout ]; then
+    cat $pgmout
+fi
+
+########################################
+# CLEAN UP THE WORKING DIRECTORY
+########################################
+if [ "$KEEPDATA" != "YES" ]; then
+   rm -rf $DATA
+fi
+
+date
+

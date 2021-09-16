@@ -1,0 +1,12 @@
+export PDY=20210824
+export COMPATH=/lfs/h1/spc/spc/noscrub/spc_post:/lfs/h1/ops/canned/com/hiresw:/lfs/h1/ops/canned/com/nam:/lfs/h1/ops/canned/com/hrrr:/lfs/h1/ops/canned/com/spcsref
+export intel_ver=19.1.3.304
+export python_ver=3.8.6
+export wgrib2_ver=2.0.8
+export prod_util_ver=2.0.8
+export gempak_ver=7.14.0
+export hiresw_ver=v8.1
+export nam_ver=v4.2
+export hrrr_ver=v4.1
+export spcsref_ver=v7.2
+export spc_post_ver=v1.1.0

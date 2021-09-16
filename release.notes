@@ -1,0 +1,161 @@
+Release Notes: SPCPOST v1.0.0
+
+=====================
+Background/Motivation
+=====================
+1. First WCOSS implementation of SPCPOST, which includes HREF calibrated thunder and HREF/SREF severe guidance that has been running locally at SPC for years (available via SPC HREF website under the “SPC Guidance” tab).
+2. The motivation for implementing SPCPOST on WCOSS includes increasing the reliability and availability of the guidance, incorporating the guidance into future versions of the NBM, and enabling the generation of SPC Timing Guidance.
+
+=====================
+Benefits
+=====================
+1. Improvement of statistical reliability and skill of probabilistic thunderstorm forecasts (1-h, 4-h, and convective day forecasts through 48-hours)
+2. Addition of skillful and reliable severe hazard forecasts for tornado, hail, and wind for the Day 1 period (4-h and convective day forecasts) to the production suite
+3. Inclusion of hourly calibrated thunderstorm probabilities in the NBM
+4. Inclusion of hourly 4-h calibrated severe hazards (tornado, hail, and wind) in the NBM
+5. Enable the generation of SPC Timing Guidance (i.e., automated approach to adding temporal information to SPC Convective Outlooks)
+
+=====================
+Output:
+=====================
+1.HREF/SREF Calibrated Severe
+Analysis time (HH) comes from most recent analysis time of most recent dependency
+Output is grib2 - grib file name templates by hazard and period (4hr or 24hr)
+  href_cal_wind.tHHz.4hr.fFFF.grib2
+  href_cal_hail.tHHz.4hr.fFFF.grib2
+  href_cal_tor.tHHz.4hr.fFFF.grib2
+  href_cal_wind.tHHz.24hr.fFFF.grib2
+  href_cal_hail.tHHz.24hr.fFFF.grib2
+  href_cal_tor.tHHz.24hr.fFFF.grib2
+00Z Cycle: 21Z SPCSREF (PDYm1) and 00Z HREF (PDY)
+  Analysis time (HH): 00
+  4-hour: Hourly from f016 to f036 
+  24-hour (12Z - 12Z): f036
+03Z Cycle: 03Z SPCSREF (PDY) and 00Z HREF (PDY)
+  Analysis time (HH): 03
+  4-hour: Hourly from f013 to f033
+  24-hour (12Z - 12Z): f033
+12Z Cycle: 09Z SPCSREF (PDY) and 12Z HREF (PDY)
+  Analysis time (HH): 12
+  4-hour: Hourly from f004 to f024
+  24-hour (12Z - 12Z): f024
+15Z Cycle: 15Z SPCSREF (PDY) and 12Z HREF (PDY)
+  Analysis time (HH): 15
+  4-hour: Hourly from f005 to f021
+  24-hour (12Z-12Z): f021
+
+2. HREF Calibrated Thunder
+Analysis time (HH) comes from the operational HREF time
+Output is grib2 - grib file name templates by period (1hr, 4hr, & full)
+  hrefct.tHHz.thunder_1hr.fFFF.grib2
+  hrefct.tHHz.thunder_4hr.fFFF.grib2
+  hrefct.tHHz.thunder_full.fFFF.grib2
+00Z and 12Z runs 
+  1-hour: Hourly from f001 to f048
+  4-hour: Hourly from f004 to f048
+  Full Period (Remainder of Convective Day): Hourly from f000 to f047
+
+============================
+Compute Resource Information
+============================
+1. 00Z/12Z Cycle (launched at 02Z/14Z)
+  00Z/12Z HREF Thunder and 21Z/09Z HREF/SREF
+  Runtime: 90-100 minutes as HREF model data arrives
+  Node: 1
+  Processes: 3 using mpirun
+    one processes spawns 8 threads for the first half of the job and 2 or 3 threads for the second half
+  Memory
+    Max: 30 GB
+    Mean: 10-15 GB
+2. 06Z/18Z Cycle (launched at 06Z/18Z)
+  03Z/15Z HREF/SREF
+  Runtime: < 1 min
+  Node: 1
+  Processes: 1
+  Memory
+  Max: < 100 MB
+  Mean: < 100 MB
+3. Disk Storage
+  grib2 output per run: 100 MB to 200 MB
+  fix files: 2.5 GB
+
+===========================
+Dissemination 
+===========================
+1. Grib2 files will be disseminated via DBNET to SPC (and other Centers, if desired)
+2. Grib2 files will be made available on NOMADS (and/or TGFTP) to the public
+
+===========================
+Implementation Instructions
+===========================
+PLEASE NOTE: Binary data files required to create SPCPOST guidance are not included in the repository. These binary files are available on the WCOSS system at “/gpfs/dell2/spc/noscrub/spc_post.v1.0.0/fix/*”. All of the files in that directory should be copied into a subdirectory named “fix/” wherever the code is being developed and/or executed. 
+
+1. Define the path variable ${SPCPOSTdir} which points to the base of the code.
+    > export SPCPOSTdir=$(pwd)
+2. Execute the copy script under /fix.
+    > ./${SPCPOSTdir}/fix/get_external_fix.sh
+3. Scripts are either python or shell, there are no binary files.
+4. There are 3 jobs
+4.1. HREF/SREF Calibrated Severe
+  Creates grib2 output of severe hazard probabilities (wind, hail, tornado)
+4.2. SPC NAM Post Processing
+  Processes the operational NAM to retrieve 1-hr precipitation for input into the HREF Calibrated Thunder job
+  Creates grib2 output of parameters needed for HREF Calibrated Thunder
+4.3. HREF Calibrated Thunder
+  Creates grib2 output of thunder probabilities
+
+===========================
+Job launch times
+===========================
+02Z and 14Z
+  HREF/SREF Calibrated Severe
+  SPC NAM Post Processing
+  HREF Calibrated Thunder
+06Z and 18Z
+  HREF/SREF Calibrated Severe
+
+****In case of HREF model delays (also SREF/SPCSREF for Calibrated Severe):
+Jobs will sleep for 60 seconds before checking for new data
+There is an adjustable time-out value (currently set at 2 hours) after which the jobs exit gracefully
+If models are delayed longer than the time-out value then the SPCPOST job will need be restarted
+
+==========================
+Restart capability
+==========================
+In the event of failure, processes will pick up where they left off
+
+==========================
+Summary of initial code in v1.0
+==========================
+1. ecf/spc_post_cron.sh 
+  launches spc_post_submit.sh
+2. ecf/spc_post_submit.sh
+  job card → launches jobs/JSPC_POST
+3. jobs/JSPC_POST
+  J-jobs → launches ex-scripts
+4. scripts/href_calib_severe/exforecast_href_cal_severe.py
+  Primary script for href/sref calibrated severe
+5. ush/href_calib_severe/gempak/
+  gempak utility scripts
+6. scripts/href_calib_thunder/exforecast_href_cal_thunder.py
+  Driver script to launch HREF calibrated thunder gen_thunder_grids.py
+7. ush/href_calib_thunder/gen_thunder_grids.py
+  Primary utility script for HREF calibrated thunder
+9. ush/href_calib_thunder/calib_thunder/
+  Local python modules/utilities used in the HREF calibrated thunder job
+10. scripts/href_calib_thunder/exnam_wrapper.sh
+  Wrapper script to launch nam_preprocess.sh
+11. ush/href_calib_thunder/nam_preprocess.sh
+  Primary utility script to process the NAM nest data with wgrib2 to retrieve 1hr precipitation. Input into HREF Calibrated Thunder.
+12. fix/href_calib_severe/
+  Calibrated severe calibration files
+13. fix/href_calib_thunder/
+  Calibrated Thunder calibration files
+
+=========================
+Dependency Diagrams
+=========================
+1. HREF Calibrated Thunder
+https://docs.google.com/presentation/d/1SlSAQZjHxAClTxdfZywqErTR03z6uJqn0UmGHGMMg4s/edit?usp=sharing
+2. HREF/SREF Calibrated Severe
+https://docs.google.com/presentation/d/1bmfvpkBYrQUF2Rn8ZNu7yUgxVa1baWv-aIMe1UyhzhA/edit?usp=sharing

@@ -1,0 +1,80 @@
+SPCPOST
+
+SPCPOST includes HREF calibrated thunder and HREF/SREF severe guidance
+that has been running locally at SPC for years (available via SPC HREF
+website under the “SPC Guidance” tab).
+The motivation for implementing SPCPOST on WCOSS includes increasing 
+the reliability and availability of the guidance, incorporating the 
+guidance into future versions of the NBM, and enabling the generation 
+of SPC Timing Guidance.
+======================================================================
+Upstream dependencies: please refer to the release notes for more details.
+
+NAM 
+PDYm1: nam.t12z.conusnest.camfld{12..60}.tm00.grib2
+PDY: nam.t00z.conusnest.camfld{0..48}.tm00.grib2
+SPCSREF
+spcsref_$PDY03f{009..033}
+spcsref_$PDY09f{003..027}
+spcsref_$PDY15f{003..021}
+spcsref_$PDY21f{015..039}
+HRRR
+PDYm1: hrrr.t18z.wrfsfcf{06..48}.grib2
+PDY: hrrr.t[00,06,12]z.wrfsfcf{00..48}.grib2
+HIRESW
+PDYm1:hiresw.t12z.arw_3km.f{12..48}.conus.subset.grib2
+PDYm1:hiresw.t12z.arw_3km.f{12..48}.conusmem2.subset.grib2
+PDYm1:hiresw.t12z.fv3_3km.f{12..60}.conus.subset.grib2
+PDY:hiresw.t[00,12]z.arw_3km.f{00..48}.conus.subset.grib2
+PDY:hiresw.t[00,12]z.arw_3km.f{00..48}.conusmem2.subset.grib2
+PDY:hiresw.t[00,12]z.fv3_3km.f{00..48}.conus.subset.grib2 
+=====================================================================
+Outputs:
+
+Severe - HREF/SREF Calibrated Severe runs at 00Z/06Z/12Z/18Z cycles: 
+href_cal_wind.tHHz.4hr.fFFF.grib2
+href_cal_hail.tHHz.4hr.fFFF.grib2
+href_cal_tor.tHHz.4hr.fFFF.grib2
+href_cal_wind.tHHz.24hr.fFFF.grib2
+href_cal_hail.tHHz.24hr.fFFF.grib2
+href_cal_tor.tHHz.24hr.fFFF.grib2
+
+Thunder - HREF Calibrated Thunder (with NAM) runs at 00Z/12Z cycles:
+hrefct.tHHz.thunder_1hr.fFFF.grib2
+hrefct.tHHz.thunder_4hr.fFFF.grib2
+hrefct.tHHz.thunder_full.fFFF.grib2
+======================================================================
+Runtime:
+
+Most of the jobs run less than 5 minutes, except for
+00Z thunder_full_1: 15 minutes.
+00Z thunder_full_2: 33 minutes.
+00Z thunder_full_3: 11 minutes.
+12Z thunder_full_1: 30 minutes.
+12Z thunder_full_2: 21 minutes.
+======================================================================
+Restart capability:
+
+All jobs have restart capability.
+======================================================================
+COLDSTART:
+
+For spc_post/nam:
+  Add COLDSTART to the task/family through ecflow and set to YES. 
+  Rerun the task/family. 
+  Remove COLDSTART after the task/family is finished.
+For spc_post/severe or spc_post/thunder :
+  To coldstart an individual task,
+    Add COLDSTART to the task through ecflow and set to YES. 
+    Rerun the task. 
+    Remove COLDSTART after the task is finished.
+  To coldstart the entire cycle, 
+    Add COLDSTART to /prod??/spc_post/[severe, thunder] through ecflow and set to YES. 
+    Requeue /prod??/spc_post/[severe, thunder]
+    Execute  jspc_post_[severe, thunder]_manager. 
+    Remove COLDSTART after the entire family is finished.
+Note:
+  Coldstarting the manager job will remove existing grib2 (and pickle files) 
+for the current cycle. It is recommended to execute the manager instead of 
+the family because the full period jobs need data from fhr jobs.
+======================================================================
